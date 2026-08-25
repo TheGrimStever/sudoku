@@ -18,12 +18,22 @@ class SudokuGame(
         selectedCell = selectedCell,
     )
 
-    fun selectCell(position: CellPosition) {}
+    fun selectCell(position: CellPosition) {
+        selectedCell = position
+    }
 
-    fun enterDigit(digit: Int) { /* reject edits to 'givens', update entries */}
+    fun enterDigit(digit: Int) {
+        require(digit in 1..9)
+
+        val position = selectedCell ?: return
+        if (puzzle.givens[position.row, position.column] != 0) return
+
+        entries = entries.withValue(position.row, position.column, digit)
+    }
 
     fun clearSelectedCell(position: CellPosition) {
-        // clear only a player-entered value
+        if (puzzle.givens[position.row, position.column] != 0) return
+        entries = entries.withValue(position.row, position.column, 0)
     }
 
     fun newGame(difficulty: Difficulty = Difficulty.EASY) {}

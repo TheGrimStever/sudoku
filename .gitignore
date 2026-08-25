@@ -31,6 +31,7 @@ replay_pid*
 
 # iOS / Xcode
 iosApp/DerivedData/
+**/xcuserdata/
 iosApp/*.xcuserdata/
 iosApp/*.xcworkspace/xcuserdata/
 iosApp/build/
