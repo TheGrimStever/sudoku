@@ -5,7 +5,7 @@ package com.ai.baca.domain
  *  location cleanly, letting only Board.kt know the data structure detail of the IntArray.
  *  So Might delete this later, setting up the rest first to see if this class makes sense.
  */
-class CellPosition(
+data class CellPosition(
     val row: Int,
     val column: Int
 ) {

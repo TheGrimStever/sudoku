@@ -1,12 +1,14 @@
 package com.ai.baca.game
 
 import com.ai.baca.domain.Board
+import com.ai.baca.domain.BoardValidator
 import com.ai.baca.domain.CellPosition
 import com.ai.baca.domain.Difficulty
 import com.ai.baca.domain.Puzzle
 
 class SudokuGame(
-    private val puzzle: Puzzle
+    private val puzzle: Puzzle,
+    private val boardValidator: BoardValidator = BoardValidator(),
 ) {
 
     private var entries = Board.empty()
@@ -16,6 +18,7 @@ class SudokuGame(
         givens = puzzle.givens,
         entries = entries,
         selectedCell = selectedCell,
+        conflictingCells = boardValidator.findConflictingCells(currentBoard()),
     )
 
     fun selectCell(position: CellPosition) {
@@ -37,5 +40,17 @@ class SudokuGame(
     }
 
     fun newGame(difficulty: Difficulty = Difficulty.EASY) {}
+
+    private fun currentBoard(): Board {
+        var board = puzzle.givens
+        for (row in 0..8) {
+            for (column in 0..8) {
+                if (board[row, column] == 0) {
+                    board = board.withValue(row, column, entries[row, column])
+                }
+            }
+        }
+        return board
+    }
 
 }

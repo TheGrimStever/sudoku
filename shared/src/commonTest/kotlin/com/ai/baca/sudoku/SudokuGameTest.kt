@@ -5,6 +5,7 @@ import com.ai.baca.game.SudokuGame
 import com.ai.baca.sample.SamplePuzzles
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class SudokuGameTest {
     @Test
@@ -27,6 +28,24 @@ class SudokuGameTest {
         game.enterDigit(7)
 
         assertEquals(0, game.snapshot().entries[position.row, position.column])
+    }
+
+    @Test
+    fun duplicateHistoryPersistsUntilConflictIsCleared() {
+        val game = SudokuGame(SamplePuzzles.easy)
+
+        game.selectCell(CellPosition(0, 2))
+        game.enterDigit(5)
+        game.selectCell(CellPosition(1, 1))
+
+        assertEquals(
+            setOf(CellPosition(0, 0), CellPosition(0, 2)),
+            game.snapshot().conflictingCells,
+        )
+
+        game.clearSelectedCell(CellPosition(0, 2))
+
+        assertTrue(game.snapshot().conflictingCells.isEmpty())
     }
 
     private fun firstEmptyCell(game: SudokuGame): CellPosition =

@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ai.baca.domain.CellPosition
@@ -59,6 +60,8 @@ fun SudokuBoard(
                             val given = snapshot.givens[row, column]
                             val entry = snapshot.entries[row, column]
                             val value = if (given != 0) given else entry
+                            val position = CellPosition(row, column)
+                            val conflicting = position in snapshot.conflictingCells
                             val selected = snapshot.selectedCell?.let {
                                 it.row == row && it.column == column
                             } == true
@@ -74,12 +77,13 @@ fun SudokuBoard(
                                     .fillMaxHeight()
                                     .background(
                                         when {
+                                            conflicting -> MaterialTheme.colorScheme.errorContainer
                                             selected -> MaterialTheme.colorScheme.primaryContainer
                                             related -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
                                             else -> MaterialTheme.colorScheme.surface
                                         }
                                     )
-                                    .clickable { onCellSelected(CellPosition(row, column)) },
+                                    .clickable { onCellSelected(position) },
                                 contentAlignment = Alignment.Center,
                             ) {
                                 if (value != 0) {
@@ -90,6 +94,11 @@ fun SudokuBoard(
                                             FontWeight.Bold
                                         } else {
                                             FontWeight.Normal
+                                        },
+                                        color = if (conflicting) {
+                                            MaterialTheme.colorScheme.error
+                                        } else {
+                                            Color.Unspecified
                                         },
                                     )
                                 }

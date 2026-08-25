@@ -6,6 +6,7 @@ import com.ai.baca.domain.CellPosition
 data class GameSnapshot(
     val givens: Board,
     val entries: Board,
-    val selectedCell: CellPosition?
+    val selectedCell: CellPosition?,
+    val conflictingCells: Set<CellPosition>,
 ) {
 }
