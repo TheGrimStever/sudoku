@@ -59,7 +59,6 @@ fun SudokuBoard(
                         repeat(9) { column ->
                             val given = snapshot.givens[row, column]
                             val entry = snapshot.entries[row, column]
-                            val value = if (given != 0) given else entry
                             val position = CellPosition(row, column)
                             val conflicting = position in snapshot.conflictingCells
                             val selected = snapshot.selectedCell?.let {
@@ -71,38 +70,18 @@ fun SudokuBoard(
                                     (it.row / 3 == row / 3 && it.column / 3 == column / 3)
                             } == true
 
-                            Box(
+                            SudokuCell(
+                                given = given,
+                                entry = entry,
+                                pencilDigits = snapshot.pencilMarks.digitsAt(position),
+                                conflicting = conflicting,
+                                selected = selected,
+                                related = related,
+                                onClick = { onCellSelected(position) },
                                 modifier = Modifier
                                     .weight(1f)
-                                    .fillMaxHeight()
-                                    .background(
-                                        when {
-                                            conflicting -> MaterialTheme.colorScheme.errorContainer
-                                            selected -> MaterialTheme.colorScheme.primaryContainer
-                                            related -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
-                                            else -> MaterialTheme.colorScheme.surface
-                                        }
-                                    )
-                                    .clickable { onCellSelected(position) },
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                if (value != 0) {
-                                    Text(
-                                        text = value.toString(),
-                                        style = MaterialTheme.typography.headlineSmall,
-                                        fontWeight = if (given != 0) {
-                                            FontWeight.Bold
-                                        } else {
-                                            FontWeight.Normal
-                                        },
-                                        color = if (conflicting) {
-                                            MaterialTheme.colorScheme.error
-                                        } else {
-                                            Color.Unspecified
-                                        },
-                                    )
-                                }
-                            }
+                                    .fillMaxHeight(),
+                            )
                         }
                     }
                 }
@@ -132,6 +111,79 @@ fun SudokuBoard(
                     size = Size(size.width - boxStrokeWidth, size.height - boxStrokeWidth),
                     style = Stroke(boxStrokeWidth),
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SudokuCell(
+    given: Int,
+    entry: Int,
+    pencilDigits: Set<Int>,
+    conflicting: Boolean,
+    selected: Boolean,
+    related: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val value = if (given != 0) given else entry
+
+    Box(
+        modifier = modifier
+            .background(
+                when {
+                    conflicting -> MaterialTheme.colorScheme.errorContainer
+                    selected -> MaterialTheme.colorScheme.primaryContainer
+                    related -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
+                    else -> MaterialTheme.colorScheme.surface
+                }
+            )
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        when {
+            value != 0 -> Text(
+                text = value.toString(),
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = if (given != 0) FontWeight.Bold else FontWeight.Normal,
+                color = if (conflicting) MaterialTheme.colorScheme.error else Color.Unspecified,
+            )
+
+            pencilDigits.isNotEmpty() -> PencilMarkGrid(pencilDigits)
+        }
+    }
+}
+
+@Composable
+private fun PencilMarkGrid(
+    pencilDigits: Set<Int>,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier.fillMaxSize()) {
+        repeat(3) { row ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+            ) {
+                repeat(3) { column ->
+                    val digit = row * 3 + column + 1
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        if (digit in pencilDigits) {
+                            Text(
+                                text = digit.toString(),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                }
             }
         }
     }

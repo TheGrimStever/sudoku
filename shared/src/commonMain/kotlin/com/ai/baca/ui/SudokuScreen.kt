@@ -60,10 +60,12 @@ fun SudokuScreen(game: SudokuGame) {
             val useSideNumberPad = maxWidth >= 680.dp
             val numberPadWidth = 144.dp
             val spacing = 16.dp
+            val controlHeight = 48.dp
+            val compactInputHeight = controlHeight + spacing + 48.dp
             val boardSize = if (useSideNumberPad) {
                 minOf(maxHeight, maxWidth - numberPadWidth - spacing, 480.dp)
             } else {
-                minOf(maxWidth, maxHeight - 48.dp - spacing, 480.dp)
+                minOf(maxWidth, maxHeight - compactInputHeight - spacing, 480.dp)
             }.coerceAtLeast(0.dp)
             val selectCell: (CellPosition) -> Unit = { position ->
                 game.selectCell(position)
@@ -73,6 +75,25 @@ fun SudokuScreen(game: SudokuGame) {
                 game.enterDigit(digit)
                 snapshot = game.snapshot()
             }
+            val undo: () -> Unit = {
+                game.undo()
+                snapshot = game.snapshot()
+            }
+            val toggleNoteMode: () -> Unit = {
+                game.toggleNoteMode()
+                snapshot = game.snapshot()
+            }
+            val clearSelectedCell: () -> Unit = {
+                game.clearSelectedCell()
+                snapshot = game.snapshot()
+            }
+            val canClear = snapshot.selectedCell?.let { position ->
+                snapshot.givens[position.row, position.column] == 0 &&
+                    (
+                        snapshot.entries[position.row, position.column] != 0 ||
+                            snapshot.pencilMarks.digitsAt(position).isNotEmpty()
+                    )
+            } == true
 
             if (useSideNumberPad) {
                 Row(
@@ -84,11 +105,23 @@ fun SudokuScreen(game: SudokuGame) {
                         onCellSelected = selectCell,
                         modifier = Modifier.size(boardSize),
                     )
-                    NumberPad(
-                        onDigitSelected = enterDigit,
-                        columns = 3,
+                    Column(
                         modifier = Modifier.width(numberPadWidth),
-                    )
+                        verticalArrangement = Arrangement.spacedBy(spacing),
+                    ) {
+                        InputControls(
+                            isNoteMode = snapshot.isNoteMode,
+                            canUndo = snapshot.canUndo,
+                            canClear = canClear,
+                            onUndo = undo,
+                            onNoteModeToggle = toggleNoteMode,
+                            onClear = clearSelectedCell,
+                        )
+                        NumberPad(
+                            onDigitSelected = enterDigit,
+                            columns = 3,
+                        )
+                    }
                 }
             } else {
                 Column(
@@ -100,10 +133,20 @@ fun SudokuScreen(game: SudokuGame) {
                         onCellSelected = selectCell,
                         modifier = Modifier.size(boardSize),
                     )
-                    NumberPad(
-                        onDigitSelected = enterDigit,
+                    Column(
                         modifier = Modifier.width(boardSize),
-                    )
+                        verticalArrangement = Arrangement.spacedBy(spacing),
+                    ) {
+                        InputControls(
+                            isNoteMode = snapshot.isNoteMode,
+                            canUndo = snapshot.canUndo,
+                            canClear = canClear,
+                            onUndo = undo,
+                            onNoteModeToggle = toggleNoteMode,
+                            onClear = clearSelectedCell,
+                        )
+                        NumberPad(onDigitSelected = enterDigit)
+                    }
                 }
             }
         }

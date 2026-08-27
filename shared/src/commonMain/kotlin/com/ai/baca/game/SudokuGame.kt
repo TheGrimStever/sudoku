@@ -12,13 +12,19 @@ class SudokuGame(
 ) {
 
     private var entries = Board.empty()
+    private var pencilMarks = PencilMarks.empty()
     private var selectedCell: CellPosition? = null
+    private var isNoteMode = false
+    private val history = mutableListOf<PlayerState>()
 
     fun snapshot() = GameSnapshot(
         givens = puzzle.givens,
         entries = entries,
+        pencilMarks = pencilMarks,
         selectedCell = selectedCell,
         conflictingCells = boardValidator.findConflictingCells(currentBoard()),
+        isNoteMode = isNoteMode,
+        canUndo = history.isNotEmpty(),
     )
 
     fun selectCell(position: CellPosition) {
@@ -31,12 +37,45 @@ class SudokuGame(
         val position = selectedCell ?: return
         if (puzzle.givens[position.row, position.column] != 0) return
 
-        entries = entries.withValue(position.row, position.column, digit)
+        if (isNoteMode) {
+            if (entries[position.row, position.column] != 0) return
+
+            saveCurrentState()
+            pencilMarks = pencilMarks.toggle(position, digit)
+        } else {
+            if (
+                entries[position.row, position.column] == digit &&
+                pencilMarks.digitsAt(position).isEmpty()
+            ) return
+
+            saveCurrentState()
+            entries = entries.withValue(position.row, position.column, digit)
+            pencilMarks = pencilMarks.clear(position)
+        }
     }
 
-    fun clearSelectedCell(position: CellPosition) {
+    fun clearSelectedCell() {
+        val position = selectedCell ?: return
         if (puzzle.givens[position.row, position.column] != 0) return
+
+        if (
+            entries[position.row, position.column] == 0 &&
+            pencilMarks.digitsAt(position).isEmpty()
+        ) return
+
+        saveCurrentState()
         entries = entries.withValue(position.row, position.column, 0)
+        pencilMarks = pencilMarks.clear(position)
+    }
+
+    fun toggleNoteMode() {
+        isNoteMode = !isNoteMode
+    }
+
+    fun undo() {
+        val previousState = history.removeLastOrNull() ?: return
+        entries = previousState.entries
+        pencilMarks = previousState.pencilMarks
     }
 
     fun newGame(difficulty: Difficulty = Difficulty.EASY) {}
@@ -52,5 +91,14 @@ class SudokuGame(
         }
         return board
     }
+
+    private fun saveCurrentState() {
+        history.add(PlayerState(entries, pencilMarks))
+    }
+
+    private data class PlayerState(
+        val entries: Board,
+        val pencilMarks: PencilMarks,
+    )
 
 }
