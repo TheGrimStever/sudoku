@@ -11,15 +11,24 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.focusable
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.dp
 import com.ai.baca.domain.CellPosition
 import com.ai.baca.game.SudokuGame
@@ -36,11 +45,56 @@ import com.ai.baca.game.SudokuGame
 @Composable
 fun SudokuScreen(game: SudokuGame) {
     var snapshot by remember(game) { mutableStateOf(game.snapshot()) }
+    val focusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(Unit) { focusRequester.requestFocus() }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
+            .padding(16.dp)
+            .focusRequester(focusRequester)
+            .focusable()
+            .onKeyEvent { event ->
+                if (event.type != KeyEventType.KeyDown) return@onKeyEvent false
+                when (event.key) {
+                    Key.One, Key.NumPad1 -> { game.enterDigit(1); snapshot = game.snapshot(); true }
+                    Key.Two, Key.NumPad2 -> { game.enterDigit(2); snapshot = game.snapshot(); true }
+                    Key.Three, Key.NumPad3 -> { game.enterDigit(3); snapshot = game.snapshot(); true }
+                    Key.Four, Key.NumPad4 -> { game.enterDigit(4); snapshot = game.snapshot(); true }
+                    Key.Five, Key.NumPad5 -> { game.enterDigit(5); snapshot = game.snapshot(); true }
+                    Key.Six, Key.NumPad6 -> { game.enterDigit(6); snapshot = game.snapshot(); true }
+                    Key.Seven, Key.NumPad7 -> { game.enterDigit(7); snapshot = game.snapshot(); true }
+                    Key.Eight, Key.NumPad8 -> { game.enterDigit(8); snapshot = game.snapshot(); true }
+                    Key.Nine, Key.NumPad9 -> { game.enterDigit(9); snapshot = game.snapshot(); true }
+                    Key.Backspace, Key.Delete -> { game.clearSelectedCell(); snapshot = game.snapshot(); true }
+                    Key.DirectionUp -> {
+                        snapshot.selectedCell?.let { pos ->
+                            if (pos.row > 0) { game.selectCell(CellPosition(pos.row - 1, pos.column)); snapshot = game.snapshot() }
+                        }
+                        true
+                    }
+                    Key.DirectionDown -> {
+                        snapshot.selectedCell?.let { pos ->
+                            if (pos.row < 8) { game.selectCell(CellPosition(pos.row + 1, pos.column)); snapshot = game.snapshot() }
+                        }
+                        true
+                    }
+                    Key.DirectionLeft -> {
+                        snapshot.selectedCell?.let { pos ->
+                            if (pos.column > 0) { game.selectCell(CellPosition(pos.row, pos.column - 1)); snapshot = game.snapshot() }
+                        }
+                        true
+                    }
+                    Key.DirectionRight -> {
+                        snapshot.selectedCell?.let { pos ->
+                            if (pos.column < 8) { game.selectCell(CellPosition(pos.row, pos.column + 1)); snapshot = game.snapshot() }
+                        }
+                        true
+                    }
+                    else -> false
+                }
+            },
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top,
     ) {
