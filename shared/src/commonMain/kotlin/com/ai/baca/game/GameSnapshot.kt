@@ -9,6 +9,7 @@ data class GameSnapshot(
     val pencilMarks: PencilMarks,
     val selectedCell: CellPosition?,
     val conflictingCells: Set<CellPosition>,
+    val incorrectCells: Set<CellPosition>,
     val completedDigits: Set<Int>,
     val isNoteMode: Boolean,
     val canUndo: Boolean,

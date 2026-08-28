@@ -224,6 +224,53 @@ class SudokuGameTest {
         assertFalse(game.snapshot().canUndo)
     }
 
+    @Test
+    fun checkForErrorsFindsEntriesThatDoNotMatchTheSolution() {
+        val game = SudokuGame(SamplePuzzles.easy)
+        val position = firstEmptyCell(game)
+        val wrongDigit = wrongDigitFor(game, position)
+
+        game.selectCell(position)
+        game.enterDigit(wrongDigit)
+
+        assertEquals(setOf(position), game.checkForErrors())
+        assertEquals(setOf(position), game.snapshot().incorrectCells)
+    }
+
+    @Test
+    fun checkForErrorsFindsNothingWhenEntriesMatchTheSolution() {
+        val game = SudokuGame(SamplePuzzles.easy)
+        val position = firstEmptyCell(game)
+        val correctDigit = SamplePuzzles.easy.solution[position.row, position.column]
+
+        game.selectCell(position)
+        game.enterDigit(correctDigit)
+
+        assertTrue(game.checkForErrors().isEmpty())
+        assertTrue(game.snapshot().incorrectCells.isEmpty())
+    }
+
+    @Test
+    fun editingAnEntryClearsThePreviousCheckResult() {
+        val game = SudokuGame(SamplePuzzles.easy)
+        val position = firstEmptyCell(game)
+        val wrongDigit = wrongDigitFor(game, position)
+
+        game.selectCell(position)
+        game.enterDigit(wrongDigit)
+        game.checkForErrors()
+        assertEquals(setOf(position), game.snapshot().incorrectCells)
+
+        game.enterDigit(SamplePuzzles.easy.solution[position.row, position.column])
+
+        assertTrue(game.snapshot().incorrectCells.isEmpty())
+    }
+
+    private fun wrongDigitFor(game: SudokuGame, position: CellPosition): Int {
+        val correctDigit = SamplePuzzles.easy.solution[position.row, position.column]
+        return (1..9).first { it != correctDigit }
+    }
+
     private fun firstEmptyCell(game: SudokuGame): CellPosition =
         firstCellMatching(game) { it == 0 }
 

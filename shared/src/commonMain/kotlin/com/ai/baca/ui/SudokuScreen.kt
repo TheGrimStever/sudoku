@@ -50,6 +50,7 @@ import com.ai.baca.game.SudokuGame
 fun SudokuScreen(game: SudokuGame, onNewGame: () -> Unit) {
     var snapshot by remember(game) { mutableStateOf(game.snapshot()) }
     var victoryAcknowledged by remember(game) { mutableStateOf(false) }
+    var checkResultMessage by remember(game) { mutableStateOf<String?>(null) }
     val focusRequester = remember { FocusRequester() }
 
     LaunchedEffect(Unit) { focusRequester.requestFocus() }
@@ -140,6 +141,19 @@ fun SudokuScreen(game: SudokuGame, onNewGame: () -> Unit) {
                         snapshot.pencilMarks.digitsAt(position).isNotEmpty()
                 )
         } == true
+        val canCheck = (0..8).any { row ->
+            (0..8).any { column -> snapshot.entries[row, column] != 0 }
+        }
+        val checkForErrors: () -> Unit = {
+            val incorrectCells = game.checkForErrors()
+            snapshot = game.snapshot()
+            checkResultMessage = if (incorrectCells.isEmpty()) {
+                "No mistakes found so far. Keep going!"
+            } else {
+                val entryWord = if (incorrectCells.size == 1) "entry" else "entries"
+                "Found ${incorrectCells.size} incorrect $entryWord, highlighted on the board."
+            }
+        }
 
         if (useSideNumberPad) {
             Row(
@@ -174,9 +188,11 @@ fun SudokuScreen(game: SudokuGame, onNewGame: () -> Unit) {
                         isNoteMode = snapshot.isNoteMode,
                         canUndo = snapshot.canUndo,
                         canClear = canClear,
+                        canCheck = canCheck,
                         onUndo = undo,
                         onNoteModeToggle = toggleNoteMode,
                         onClear = clearSelectedCell,
+                        onCheck = checkForErrors,
                     )
                     NumberPad(
                         onDigitSelected = enterDigit,
@@ -216,9 +232,11 @@ fun SudokuScreen(game: SudokuGame, onNewGame: () -> Unit) {
                         isNoteMode = snapshot.isNoteMode,
                         canUndo = snapshot.canUndo,
                         canClear = canClear,
+                        canCheck = canCheck,
                         onUndo = undo,
                         onNoteModeToggle = toggleNoteMode,
                         onClear = clearSelectedCell,
+                        onCheck = checkForErrors,
                     )
                     NumberPad(
                         onDigitSelected = enterDigit,
@@ -241,6 +259,19 @@ fun SudokuScreen(game: SudokuGame, onNewGame: () -> Unit) {
                 dismissButton = {
                     TextButton(onClick = { victoryAcknowledged = true }) {
                         Text("View Board")
+                    }
+                },
+            )
+        }
+
+        checkResultMessage?.let { message ->
+            AlertDialog(
+                onDismissRequest = { checkResultMessage = null },
+                title = { Text("Check Puzzle") },
+                text = { Text(message) },
+                confirmButton = {
+                    TextButton(onClick = { checkResultMessage = null }) {
+                        Text("OK")
                     }
                 },
             )

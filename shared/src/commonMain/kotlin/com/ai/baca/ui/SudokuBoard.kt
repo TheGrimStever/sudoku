@@ -61,6 +61,7 @@ fun SudokuBoard(
                             val entry = snapshot.entries[row, column]
                             val position = CellPosition(row, column)
                             val conflicting = position in snapshot.conflictingCells
+                            val incorrect = position in snapshot.incorrectCells
                             val selected = snapshot.selectedCell?.let {
                                 it.row == row && it.column == column
                             } == true
@@ -75,6 +76,7 @@ fun SudokuBoard(
                                 entry = entry,
                                 pencilDigits = snapshot.pencilMarks.digitsAt(position),
                                 conflicting = conflicting,
+                                incorrect = incorrect,
                                 selected = selected,
                                 related = related,
                                 onClick = { onCellSelected(position) },
@@ -122,6 +124,7 @@ private fun SudokuCell(
     entry: Int,
     pencilDigits: Set<Int>,
     conflicting: Boolean,
+    incorrect: Boolean,
     selected: Boolean,
     related: Boolean,
     onClick: () -> Unit,
@@ -134,6 +137,7 @@ private fun SudokuCell(
             .background(
                 when {
                     conflicting -> MaterialTheme.colorScheme.errorContainer
+                    incorrect -> MaterialTheme.colorScheme.tertiaryContainer
                     selected -> MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
                     related -> MaterialTheme.colorScheme.primaryContainer
                     else -> MaterialTheme.colorScheme.surface
@@ -147,7 +151,11 @@ private fun SudokuCell(
                 text = value.toString(),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = if (given != 0) FontWeight.Bold else FontWeight.Normal,
-                color = if (conflicting) MaterialTheme.colorScheme.error else Color.Unspecified,
+                color = when {
+                    conflicting -> MaterialTheme.colorScheme.error
+                    incorrect -> MaterialTheme.colorScheme.onTertiaryContainer
+                    else -> Color.Unspecified
+                },
             )
 
             pencilDigits.isNotEmpty() -> PencilMarkGrid(pencilDigits)

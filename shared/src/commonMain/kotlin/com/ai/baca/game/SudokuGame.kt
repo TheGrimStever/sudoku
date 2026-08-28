@@ -15,6 +15,7 @@ class SudokuGame(
     private var pencilMarks = PencilMarks.empty()
     private var selectedCell: CellPosition? = null
     private var isNoteMode = false
+    private var incorrectCells: Set<CellPosition> = emptySet()
     private val history = mutableListOf<PlayerState>()
 
     fun snapshot(): GameSnapshot {
@@ -26,10 +27,29 @@ class SudokuGame(
             pencilMarks = pencilMarks,
             selectedCell = selectedCell,
             conflictingCells = conflictingCells,
+            incorrectCells = incorrectCells,
             completedDigits = completedDigits(board, conflictingCells),
             isNoteMode = isNoteMode,
             canUndo = history.isNotEmpty(),
         )
+    }
+
+    /**
+     * Compares every player-entered digit against the puzzle's solution and
+     * records which ones are wrong. This is purely opt-in: nothing is
+     * checked against the solution unless the player explicitly calls this,
+     * so a player who wants a traditional, no-hints experience never
+     * triggers it.
+     */
+    fun checkForErrors(): Set<CellPosition> {
+        incorrectCells = (0..8).flatMap { row ->
+            (0..8).mapNotNull { column ->
+                val entry = entries[row, column]
+                val position = CellPosition(row, column)
+                if (entry != 0 && entry != puzzle.solution[row, column]) position else null
+            }
+        }.toSet()
+        return incorrectCells
     }
 
     private fun completedDigits(board: Board, conflictingCells: Set<CellPosition>): Set<Int> {
@@ -67,6 +87,7 @@ class SudokuGame(
             saveCurrentState()
             entries = entries.withValue(position.row, position.column, digit)
             pencilMarks = pencilMarks.clear(position)
+            incorrectCells = emptySet()
         }
     }
 
@@ -82,6 +103,7 @@ class SudokuGame(
         saveCurrentState()
         entries = entries.withValue(position.row, position.column, 0)
         pencilMarks = pencilMarks.clear(position)
+        incorrectCells = emptySet()
     }
 
     fun toggleNoteMode() {
@@ -92,9 +114,8 @@ class SudokuGame(
         val previousState = history.removeLastOrNull() ?: return
         entries = previousState.entries
         pencilMarks = previousState.pencilMarks
+        incorrectCells = emptySet()
     }
-
-    fun newGame(difficulty: Difficulty = Difficulty.EASY) {}
 
     private fun currentBoard(): Board {
         var board = puzzle.givens

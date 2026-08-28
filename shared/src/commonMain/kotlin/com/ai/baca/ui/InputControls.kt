@@ -17,9 +17,11 @@ fun InputControls(
     isNoteMode: Boolean,
     canUndo: Boolean,
     canClear: Boolean,
+    canCheck: Boolean,
     onUndo: () -> Unit,
     onNoteModeToggle: () -> Unit,
     onClear: () -> Unit,
+    onCheck: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -62,6 +64,15 @@ fun InputControls(
             modifier = Modifier.weight(1f),
         ) {
             Text("Clear")
+        }
+
+        OutlinedButton(
+            onClick = onCheck,
+            enabled = canCheck,
+            contentPadding = PaddingValues(horizontal = 4.dp),
+            modifier = Modifier.weight(1f),
+        ) {
+            Text("Check")
         }
     }
 }
