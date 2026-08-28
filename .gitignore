@@ -40,3 +40,5 @@ iosApp/Pods/
 
 # Apple Specific
 .DS_Store
+
+.claude

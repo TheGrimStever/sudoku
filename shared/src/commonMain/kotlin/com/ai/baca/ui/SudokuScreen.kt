@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.foundation.focusable
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -43,7 +44,7 @@ import com.ai.baca.game.SudokuGame
  */
 
 @Composable
-fun SudokuScreen(game: SudokuGame) {
+fun SudokuScreen(game: SudokuGame, onNewGame: () -> Unit) {
     var snapshot by remember(game) { mutableStateOf(game.snapshot()) }
     val focusRequester = remember { FocusRequester() }
 
@@ -98,10 +99,19 @@ fun SudokuScreen(game: SudokuGame) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top,
     ) {
-        Text(
-            text = "Sudoku",
-            style = MaterialTheme.typography.headlineMedium,
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = "Sudoku",
+                style = MaterialTheme.typography.headlineMedium,
+            )
+            OutlinedButton(onClick = onNewGame) {
+                Text("New Game")
+            }
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
