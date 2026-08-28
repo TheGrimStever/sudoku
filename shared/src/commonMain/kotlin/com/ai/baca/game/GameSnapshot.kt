@@ -9,7 +9,9 @@ data class GameSnapshot(
     val pencilMarks: PencilMarks,
     val selectedCell: CellPosition?,
     val conflictingCells: Set<CellPosition>,
+    val completedDigits: Set<Int>,
     val isNoteMode: Boolean,
     val canUndo: Boolean,
 ) {
+    val isComplete: Boolean get() = completedDigits.size == 9
 }

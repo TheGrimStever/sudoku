@@ -134,8 +134,8 @@ private fun SudokuCell(
             .background(
                 when {
                     conflicting -> MaterialTheme.colorScheme.errorContainer
-                    selected -> MaterialTheme.colorScheme.primaryContainer
-                    related -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
+                    selected -> MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
+                    related -> MaterialTheme.colorScheme.primaryContainer
                     else -> MaterialTheme.colorScheme.surface
                 }
             )

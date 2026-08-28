@@ -5,16 +5,19 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.foundation.focusable
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -46,11 +49,12 @@ import com.ai.baca.game.SudokuGame
 @Composable
 fun SudokuScreen(game: SudokuGame, onNewGame: () -> Unit) {
     var snapshot by remember(game) { mutableStateOf(game.snapshot()) }
+    var victoryAcknowledged by remember(game) { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
 
     LaunchedEffect(Unit) { focusRequester.requestFocus() }
 
-    Column(
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
@@ -96,123 +100,150 @@ fun SudokuScreen(game: SudokuGame, onNewGame: () -> Unit) {
                     else -> false
                 }
             },
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Top,
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = "Sudoku",
-                style = MaterialTheme.typography.headlineMedium,
-            )
-            OutlinedButton(onClick = onNewGame) {
-                Text("New Game")
+        val useSideNumberPad = maxWidth >= 680.dp
+        val numberPadWidth = 144.dp
+        val spacing = 16.dp
+        val controlHeight = 48.dp
+        val titleHeight = 48.dp
+        val compactInputHeight = controlHeight + spacing + 48.dp
+        val boardSize = if (useSideNumberPad) {
+            minOf(maxHeight - titleHeight - spacing, maxWidth - numberPadWidth - spacing, 480.dp)
+        } else {
+            minOf(maxWidth, maxHeight - compactInputHeight - spacing, 480.dp)
+        }.coerceAtLeast(0.dp)
+
+        val selectCell: (CellPosition) -> Unit = { position ->
+            game.selectCell(position)
+            snapshot = game.snapshot()
+        }
+        val enterDigit: (Int) -> Unit = { digit ->
+            game.enterDigit(digit)
+            snapshot = game.snapshot()
+        }
+        val undo: () -> Unit = {
+            game.undo()
+            snapshot = game.snapshot()
+        }
+        val toggleNoteMode: () -> Unit = {
+            game.toggleNoteMode()
+            snapshot = game.snapshot()
+        }
+        val clearSelectedCell: () -> Unit = {
+            game.clearSelectedCell()
+            snapshot = game.snapshot()
+        }
+        val canClear = snapshot.selectedCell?.let { position ->
+            snapshot.givens[position.row, position.column] == 0 &&
+                (
+                    snapshot.entries[position.row, position.column] != 0 ||
+                        snapshot.pencilMarks.digitsAt(position).isNotEmpty()
+                )
+        } == true
+
+        if (useSideNumberPad) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(spacing),
+                verticalAlignment = Alignment.Top,
+            ) {
+                Column(horizontalAlignment = Alignment.Start) {
+                    Text(
+                        text = "Sudoku",
+                        style = MaterialTheme.typography.headlineMedium,
+                    )
+                    Spacer(modifier = Modifier.height(spacing))
+                    SudokuBoard(
+                        snapshot = snapshot,
+                        onCellSelected = selectCell,
+                        modifier = Modifier.size(boardSize),
+                    )
+                }
+                Column(
+                    modifier = Modifier.width(numberPadWidth),
+                    verticalArrangement = Arrangement.spacedBy(spacing),
+                ) {
+                    OutlinedButton(
+                        onClick = onNewGame,
+                        modifier = Modifier
+                            .height(controlHeight)
+                            .fillMaxWidth(),
+                    ) {
+                        Text("New Game")
+                    }
+                    InputControls(
+                        isNoteMode = snapshot.isNoteMode,
+                        canUndo = snapshot.canUndo,
+                        canClear = canClear,
+                        onUndo = undo,
+                        onNoteModeToggle = toggleNoteMode,
+                        onClear = clearSelectedCell,
+                    )
+                    NumberPad(
+                        onDigitSelected = enterDigit,
+                        completedDigits = snapshot.completedDigits,
+                        columns = 3,
+                    )
+                }
+            }
+        } else {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(spacing),
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = "Sudoku",
+                        style = MaterialTheme.typography.headlineMedium,
+                    )
+                    OutlinedButton(onClick = onNewGame) {
+                        Text("New Game")
+                    }
+                }
+                SudokuBoard(
+                    snapshot = snapshot,
+                    onCellSelected = selectCell,
+                    modifier = Modifier.size(boardSize),
+                )
+                Column(
+                    modifier = Modifier.width(boardSize),
+                    verticalArrangement = Arrangement.spacedBy(spacing),
+                ) {
+                    InputControls(
+                        isNoteMode = snapshot.isNoteMode,
+                        canUndo = snapshot.canUndo,
+                        canClear = canClear,
+                        onUndo = undo,
+                        onNoteModeToggle = toggleNoteMode,
+                        onClear = clearSelectedCell,
+                    )
+                    NumberPad(
+                        onDigitSelected = enterDigit,
+                        completedDigits = snapshot.completedDigits,
+                    )
+                }
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        BoxWithConstraints(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth(),
-            contentAlignment = Alignment.Center,
-        ) {
-            val useSideNumberPad = maxWidth >= 680.dp
-            val numberPadWidth = 144.dp
-            val spacing = 16.dp
-            val controlHeight = 48.dp
-            val compactInputHeight = controlHeight + spacing + 48.dp
-            val boardSize = if (useSideNumberPad) {
-                minOf(maxHeight, maxWidth - numberPadWidth - spacing, 480.dp)
-            } else {
-                minOf(maxWidth, maxHeight - compactInputHeight - spacing, 480.dp)
-            }.coerceAtLeast(0.dp)
-            val selectCell: (CellPosition) -> Unit = { position ->
-                game.selectCell(position)
-                snapshot = game.snapshot()
-            }
-            val enterDigit: (Int) -> Unit = { digit ->
-                game.enterDigit(digit)
-                snapshot = game.snapshot()
-            }
-            val undo: () -> Unit = {
-                game.undo()
-                snapshot = game.snapshot()
-            }
-            val toggleNoteMode: () -> Unit = {
-                game.toggleNoteMode()
-                snapshot = game.snapshot()
-            }
-            val clearSelectedCell: () -> Unit = {
-                game.clearSelectedCell()
-                snapshot = game.snapshot()
-            }
-            val canClear = snapshot.selectedCell?.let { position ->
-                snapshot.givens[position.row, position.column] == 0 &&
-                    (
-                        snapshot.entries[position.row, position.column] != 0 ||
-                            snapshot.pencilMarks.digitsAt(position).isNotEmpty()
-                    )
-            } == true
-
-            if (useSideNumberPad) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(spacing),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    SudokuBoard(
-                        snapshot = snapshot,
-                        onCellSelected = selectCell,
-                        modifier = Modifier.size(boardSize),
-                    )
-                    Column(
-                        modifier = Modifier.width(numberPadWidth),
-                        verticalArrangement = Arrangement.spacedBy(spacing),
-                    ) {
-                        InputControls(
-                            isNoteMode = snapshot.isNoteMode,
-                            canUndo = snapshot.canUndo,
-                            canClear = canClear,
-                            onUndo = undo,
-                            onNoteModeToggle = toggleNoteMode,
-                            onClear = clearSelectedCell,
-                        )
-                        NumberPad(
-                            onDigitSelected = enterDigit,
-                            columns = 3,
-                        )
+        if (snapshot.isComplete && !victoryAcknowledged) {
+            AlertDialog(
+                onDismissRequest = { victoryAcknowledged = true },
+                title = { Text("Puzzle Complete!") },
+                text = { Text("Congratulations, you solved the puzzle!") },
+                confirmButton = {
+                    Button(onClick = onNewGame) {
+                        Text("New Game")
                     }
-                }
-            } else {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(spacing),
-                ) {
-                    SudokuBoard(
-                        snapshot = snapshot,
-                        onCellSelected = selectCell,
-                        modifier = Modifier.size(boardSize),
-                    )
-                    Column(
-                        modifier = Modifier.width(boardSize),
-                        verticalArrangement = Arrangement.spacedBy(spacing),
-                    ) {
-                        InputControls(
-                            isNoteMode = snapshot.isNoteMode,
-                            canUndo = snapshot.canUndo,
-                            canClear = canClear,
-                            onUndo = undo,
-                            onNoteModeToggle = toggleNoteMode,
-                            onClear = clearSelectedCell,
-                        )
-                        NumberPad(onDigitSelected = enterDigit)
+                },
+                dismissButton = {
+                    TextButton(onClick = { victoryAcknowledged = true }) {
+                        Text("View Board")
                     }
-                }
-            }
+                },
+            )
         }
     }
 }

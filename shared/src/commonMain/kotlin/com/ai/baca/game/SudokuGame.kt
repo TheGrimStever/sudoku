@@ -17,15 +17,31 @@ class SudokuGame(
     private var isNoteMode = false
     private val history = mutableListOf<PlayerState>()
 
-    fun snapshot() = GameSnapshot(
-        givens = puzzle.givens,
-        entries = entries,
-        pencilMarks = pencilMarks,
-        selectedCell = selectedCell,
-        conflictingCells = boardValidator.findConflictingCells(currentBoard()),
-        isNoteMode = isNoteMode,
-        canUndo = history.isNotEmpty(),
-    )
+    fun snapshot(): GameSnapshot {
+        val board = currentBoard()
+        val conflictingCells = boardValidator.findConflictingCells(board)
+        return GameSnapshot(
+            givens = puzzle.givens,
+            entries = entries,
+            pencilMarks = pencilMarks,
+            selectedCell = selectedCell,
+            conflictingCells = conflictingCells,
+            completedDigits = completedDigits(board, conflictingCells),
+            isNoteMode = isNoteMode,
+            canUndo = history.isNotEmpty(),
+        )
+    }
+
+    private fun completedDigits(board: Board, conflictingCells: Set<CellPosition>): Set<Int> {
+        return (1..9).filter { digit ->
+            val positions = (0..8).flatMap { row ->
+                (0..8).mapNotNull { col ->
+                    if (board[row, col] == digit) CellPosition(row, col) else null
+                }
+            }
+            positions.size == 9 && positions.none { it in conflictingCells }
+        }.toSet()
+    }
 
     fun selectCell(position: CellPosition) {
         selectedCell = position
