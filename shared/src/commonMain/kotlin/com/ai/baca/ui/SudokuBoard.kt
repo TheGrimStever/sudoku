@@ -44,6 +44,12 @@ fun SudokuBoard(
     BoxWithConstraints(modifier = modifier) {
         val boardSize = minOf(maxWidth, maxHeight, 480.dp)
 
+        val selectedDigit = snapshot.selectedCell?.let { position ->
+            val given = snapshot.givens[position.row, position.column]
+            val entry = snapshot.entries[position.row, position.column]
+            (if (given != 0) given else entry).takeIf { it != 0 }
+        }
+
         Box(
             modifier = Modifier
                 .align(Alignment.Center)
@@ -70,6 +76,8 @@ fun SudokuBoard(
                                     it.column == column ||
                                     (it.row / 3 == row / 3 && it.column / 3 == column / 3)
                             } == true
+                            val cellValue = if (given != 0) given else entry
+                            val sameValue = !selected && selectedDigit != null && cellValue == selectedDigit
 
                             SudokuCell(
                                 given = given,
@@ -79,6 +87,7 @@ fun SudokuBoard(
                                 incorrect = incorrect,
                                 selected = selected,
                                 related = related,
+                                sameValue = sameValue,
                                 onClick = { onCellSelected(position) },
                                 modifier = Modifier
                                     .weight(1f)
@@ -127,6 +136,7 @@ private fun SudokuCell(
     incorrect: Boolean,
     selected: Boolean,
     related: Boolean,
+    sameValue: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -139,6 +149,7 @@ private fun SudokuCell(
                     conflicting -> MaterialTheme.colorScheme.errorContainer
                     incorrect -> MaterialTheme.colorScheme.tertiaryContainer
                     selected -> MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
+                    sameValue -> MaterialTheme.colorScheme.secondaryContainer
                     related -> MaterialTheme.colorScheme.primaryContainer
                     else -> MaterialTheme.colorScheme.surface
                 }

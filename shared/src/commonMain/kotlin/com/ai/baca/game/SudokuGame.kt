@@ -3,7 +3,6 @@ package com.ai.baca.game
 import com.ai.baca.domain.Board
 import com.ai.baca.domain.BoardValidator
 import com.ai.baca.domain.CellPosition
-import com.ai.baca.domain.Difficulty
 import com.ai.baca.domain.Puzzle
 
 class SudokuGame(

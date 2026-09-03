@@ -103,7 +103,7 @@ fun SudokuScreen(game: SudokuGame, onNewGame: () -> Unit) {
             },
     ) {
         val useSideNumberPad = maxWidth >= 680.dp
-        val numberPadWidth = 144.dp
+        val numberPadWidth = 260.dp
         val spacing = 16.dp
         val controlHeight = 48.dp
         val titleHeight = 48.dp
